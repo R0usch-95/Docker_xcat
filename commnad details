@@ -1,0 +1,55 @@
+#To pull the latest xCAT Docker image, run
+[dockerhost]#sudo docker pull xcat/xcat2:latest
+
+#Run the xCAT Docker container with the Docker image xCAT/xCAT2:latest and build the network 
+
+[dockerhost]#docker run -d \
+--name xcat \
+--network=xcat-net
+--hostname xcatmn
+--privilaged \
+-v /sys/fs/cgroup:/sys/fs/cgroup.ro \
+-v /xcatdata:/xcatdata
+-v /var/log/xcat:/var/log/xcat \
+-v /customer_data:/customer_data \
+xcat/xcat2:latest
+
+The descriptions:
+name:	Assign a name to the container, this name can be used to manipulate the container on docker host.
+–network=host:	Use the host network driver for a container, that container network stack is not isolated from the docker host.
+hostname:	Specify the hostname of container, which is available inside the container.
+–privileged=true:
+ 	Give extended privileges to this container.
+-v /sys/fs/cgroup:/sys/fs/cgroup:ro:
+ 	Is mandatory configuration to enable systemd in container.
+-v /xcatdata:/xcatdata:
+ 	xCAT container will create /xcatdata volume to store configuration and OS distro data. I.e. xCAT important directories /install, /tftpboot and /etc will be saved under /xcatdata. If user does not explicitly mount this directory to docker host, this directory will be mounted under /var/lib/docker/volumes/.
+-v /var/log/xcat:/var/log/xcat:
+ 	All xCAT running logs are saved under /var/log/xcat. Use this setting to export them to Docker host.
+-v /customer_data:/customer_data:
+ 	Is optional. Use this setting to transfer user data between Docker host and containe
+
+#To enter xCAT Docker container
+[dockerhost]# sudo docker exec -it xcatmn bash
+
+#Now container xcatmn will work as a normal xCAT management node, can run xCAT commands directly.
+
+xCAT Configuration
+
+# lsxcatd –a 
+	This command show version of xCAT 
+
+Following commands will Change xCAT data object definitions
+#chdef -t site dhcpinterfaces="<network_interface>"
+#chdef -t site master="<ip_address_of_master>"
+#chdef -t osimage centos7.9-x86_64-netboot-compute synclists = “/install/custom/netboot/compute.synclist”
+#chdef -t group compute provmethod=centos7.9-x86_64-netboot-compute
+#chdef -t site domain=xcat.in
+
+#packimage centos7.9-x86_64-netboot-compute
+Packs the stateless image from the chroot file system
+
+#mkdef -t node <compute_node_name> groups=compute,all ip=<ip_inrange_of_master> mac=<compute_node_mac_addr> netboot=xnba
+
+#nodeset compute osimage=centos7.9-x86_64-netboot-compute
+	set the boot state for a noderange
